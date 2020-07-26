@@ -31,7 +31,7 @@ qemu-system-x86_64 \
   \
   -object iothread,id=io1 \
   -device virtio-blk-pci,drive=disk0,iothread=io1 \
-  -drive if=none,id=disk0,cache=none,format=qcow2,aio=threads,file=/win10-LIVE.qcow2 \
+  -drive if=none,id=disk0,cache=none,format=qcow2,aio=threads,file=/emugaming.qcow2 \
   \
   -nic user,model=virtio-net-pci `# simple passthrough networking that cant ping` \
   \
