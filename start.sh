@@ -3,7 +3,7 @@
 # disconnect all virtual terminals (for GPU passthrough to work)
 test -e /sys/class/vtconsole/vtcon0/bind && echo 0 > /sys/class/vtconsole/vtcon0/bind
 test -e /sys/class/vtconsole/vtcon1/bind && echo 0 > /sys/class/vtconsole/vtcon1/bind
-test -e /sys/devices/platform/efi-framebuffer.0/unbind && echo "efi-framebuffer.0" > /sys/bus/platform/drivers/efi-framebuffer/unbind
+test -e /sys/devices/platform/efi-framebuffer.0/driver && echo "efi-framebuffer.0" > /sys/devices/platform/efi-framebuffer.0/driver/unbind
 
 # load vfio drivers onto devices if it's not loaded (for GPU passthrough to work)
 modprobe vfio_pci
@@ -12,6 +12,7 @@ for pci_id in "0000:01:00.0" "0000:01:00.1" "0000:01:00.2" "0000:01:00.3"; do
   test -e /sys/bus/pci/devices/$pci_id/driver && echo -n "$pci_id" > /sys/bus/pci/devices/$pci_id/driver/unbind
   echo "$(cat /sys/bus/pci/devices/$pci_id/vendor) $(cat /sys/bus/pci/devices/$pci_id/device)" > /sys/bus/pci/drivers/vfio-pci/new_id
 done
+sleep 1     # TODO: remove this
 
 # let the killing begin
 qemu-system-x86_64 \

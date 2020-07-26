@@ -2,7 +2,7 @@
 
 Given a QEMU Windows 10 image (you can create one as you normally would, name it `emugaming.qcow2`), this will run it on Docker with GPU/vfio passthrough. Works great for near-native gaming.
 
-Runs on Linux and with minor changes should also be able to run on Windows or MacOS hosts (I think MacOS supports VT-d?). Note that you'll need a ROM dump of your GPU if you're passing through the primary boot video card. Also you'll need the kernel parameters `iommu=pt intel_iommu=on`.
+Runs on Linux and with some changes should also be able to run on Windows or MacOS hosts (I think MacOS supports VT-d?). Note that you'll need a ROM dump of your GPU if you're passing through the primary boot video card. Also you'll need the kernel parameters `iommu=pt intel_iommu=on` to enable IOMMU/VT-d.
 
 Still working on making stuff actually configurable, but make your modifications in `start.sh` for configuring your components. Ideally in the future you'll be able to just run `docker run lg/emugaming` with hardly any parameters and all will be automatic, including generating the Windows 10 image from MS.
 
@@ -14,22 +14,26 @@ DOCKER_BUILDKIT=1 docker build -t emugaming .
 
 ## Creating Windows 10 image
 
-1. Run the docker `run` command below but appending `ash` at the end to enter the docker image. This will open ash, Alpine's bash equivalent.
-2. Download the [latest Windows 10 ISO](https://www.microsoft.com/en-us/software-download/windows10ISO) from Microsoft.
-3. Download the [latest stable virtio-win driver pack](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) from Fedora or [their github](https://github.com/virtio-win/kvm-guest-drivers-windows).
-4. Create a disk image using `qemu-img create -f qcow2 emugaming.qcow2 100G`
+1. Create a disk image using `qemu-img create -f qcow2 emugaming.qcow2 100G` on the host. You might need the `qemu-img` package.
+2. Run the `docker run` command below but appending `ash` at the end to enter the docker image. This will open ash, Alpine's bash equivalent.
+3. Download the [latest Windows 10 ISO](https://www.microsoft.com/en-us/software-download/windows10ISO) from Microsoft.
+4. Download the [latest stable virtio-win driver pack](https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso) from Fedora or [their github](https://github.com/virtio-win/kvm-guest-drivers-windows).
 5. Run a `qemu` command similar to `start.sh`, except:
     - I'd recommend not using the GPU passthrough just yet. Remove the `vfio-pci`, `usb-host`, `vga` and `nographic` lines, and instead pass through `-vnc 0.0.0.0:0 -vga qxl -device usb-tablet` and using VNC to install Windows and getting the image stable.
     - Note you need to mount the two ISOs you downloaded `-cdrom win10.iso -cdrom virtio.iso`
     - When you install Windows it won't see your hard drive, click Have Disk and select the `viostor` driver in the VirtIO driver ISO
-6. Once in Windows, I'd recommend disabling hibernation and running all the disk cleanup tools you can to make the qcow2 as small as possible.
+    - You can use the `quit` or `system_powerdown` commands in qemu to do a hard shutdown or a soft one
+6. Once Windows is installed, I'd recommend some things to change:
+    - Disable hibernation and standby (its ok to keep monitor standby on though)
+    - Set `bcdedit /set '{current}' recoveryenabled No` since it can get confusing when debugging video card passthrough problems
+    - Install the remainder of the Virtio drivers, plus other missing drivers too (like video card)
 
 ## Running
 
 ```bash
 docker run \
   --volume $PWD/emugaming.qcow2:/emugaming.qcow2 `# the persistent volume` \
-  --detach \
+  --interactive --tty \
   \
   --device /dev/kvm `# use hardware acceleration` \
   --device /dev/vfio/vfio ` # vfio is used for PCIe passthrough` \
@@ -50,6 +54,7 @@ docker run \
 - Detect and complain when IOMMU isnt on or devices not passthrough-able
 - Generate Windows 10 image automatically based on official Microsoft images
 - Remove the need for `--privileged` and broad permissions. Should be possible...
+- Remove the sleep statement in `start.sh`
 - Get this built for k3s or another Kubernetes distro
 
 ## Screenshots
