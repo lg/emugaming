@@ -46,6 +46,11 @@ docker run \
   emugaming
 ```
 
+To use the QEMU Monitor command-line:
+```bash
+docker exec -it <CONTAINER_ID> socat - UNIX-CONNECT:/var/run/qemu_monitor
+```
+
 ## TODO
 
 - Make GPU params configurable (like address of devices and ROM file)
@@ -55,6 +60,7 @@ docker run \
 - Generate Windows 10 image automatically based on official Microsoft images
 - Remove the need for `--privileged` and broad permissions. Should be possible...
 - Remove the sleep statement in `start.sh`
+- Fix windows launching recover mode
 - Get this built for k3s or another Kubernetes distro
 
 ## Screenshots

@@ -14,10 +14,14 @@ for pci_id in "0000:01:00.0" "0000:01:00.1" "0000:01:00.2" "0000:01:00.3"; do
 done
 sleep 1     # TODO: remove this
 
-# let the killing begin
+# gracefully shut down QEMU when docker tries stopping it
+trap 'echo system_powerdown | socat - UNIX-CONNECT:/var/run/qemu_monitor' SIGTERM
+
+# run qemu
 qemu-system-x86_64 \
   -nodefaults \
   -monitor stdio \
+  -monitor unix:/var/run/qemu_monitor,server,nowait `# so we can send system_powerdown instead of hard stop when docker shuts down` \
   \
   -machine type=q35 `# allows for PCIe` \
   -drive if=pflash,format=raw,readonly,file=/usr/share/OVMF/OVMF_CODE.fd `# read-only UEFI bios` \
@@ -28,7 +32,7 @@ qemu-system-x86_64 \
   -enable-kvm \
   -cpu host,check,enforce,hv_relaxed,hv_spinlocks=0x1fff,hv_vapic,hv_time,l3-cache=on,-hypervisor,kvm=off,migratable=no,+invtsc,hv_vendor_id=1234567890ab \
   -smp cpus=20,cores=10,threads=2,sockets=1 \
-  -m 8G \
+  -m 12G \
   \
   -object iothread,id=io1 \
   -device virtio-blk-pci,drive=disk0,iothread=io1 \
@@ -43,4 +47,7 @@ qemu-system-x86_64 \
   -device usb-host,vendorid=0x05ac,productid=0x0267 `# apple magic keyboard` \
   \
   -vga none \
-  -nographic
+  -nographic &
+QEMU_PID=$!
+
+while [ -e /proc/$QEMU_PID ]; do sleep 1; done
