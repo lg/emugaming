@@ -12,7 +12,7 @@ for pci_id in "0000:01:00.0" "0000:01:00.1" "0000:01:00.2" "0000:01:00.3"; do
   test -e /sys/bus/pci/devices/$pci_id/driver && echo -n "$pci_id" > /sys/bus/pci/devices/$pci_id/driver/unbind
   echo "$(cat /sys/bus/pci/devices/$pci_id/vendor) $(cat /sys/bus/pci/devices/$pci_id/device)" > /sys/bus/pci/drivers/vfio-pci/new_id
 done
-sleep 1     # TODO: remove this
+while [ ! -e /dev/vfio ]; do sleep 1; done
 
 # gracefully shut down QEMU when docker tries stopping it
 trap 'echo system_powerdown | socat - UNIX-CONNECT:/var/run/qemu_monitor' SIGTERM

@@ -51,6 +51,15 @@ To use the QEMU Monitor command-line:
 docker exec -it <CONTAINER_ID> socat - UNIX-CONNECT:/var/run/qemu_monitor
 ```
 
+To start this docker image at boot:
+```bash
+docker run \
+  ...
+  --detach \
+  --restart unless-stopped \
+  ...
+```
+
 ## TODO
 
 - Make GPU params configurable (like address of devices and ROM file)
